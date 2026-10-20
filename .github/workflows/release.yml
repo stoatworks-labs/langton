@@ -43,12 +43,20 @@ jobs:
       # GLEW comes from vcpkg, static-linked (static-md keeps the CRT dynamic
       # so the plugin matches the host) so the .dll has no external
       # glew32.dll runtime dependency.
+      #
+      # Applocal off: with a static triplet there is no DLL for vcpkg to copy
+      # beside the plugins, and its post-build copy step runs once per DLL. The
+      # two plugins link in the same instant under --parallel, both copy steps
+      # open build/Release together, and one fails with "being used by another
+      # process" (exit 32): the first Windows build here, 2026-10-20, on
+      # windows-latest's Visual Studio 18 image.
       - name: Configure (Windows)
         if: runner.os == 'Windows'
         run: >
           cmake -B build -A x64
           -DCMAKE_BUILD_TYPE=Release
           -DLANGTON_BUILD_TOOLS=OFF
+          -DVCPKG_APPLOCAL_DEPS=OFF
           -DVCPKG_TARGET_TRIPLET=x64-windows-static-md
           -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
 

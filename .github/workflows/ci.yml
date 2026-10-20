@@ -89,11 +89,12 @@ jobs:
       - name: Configure
         # The toolchain path MUST stay double-quoted: a `run:` step on Windows
         # is PowerShell, and unquoted this expands to nothing. Tools off: lntest
-        # links CGL and is macOS-only.
+        # links CGL and is macOS-only. Applocal off: see release.yml.
         run: >
           cmake -B build -A x64
           -DCMAKE_BUILD_TYPE=Release
           -DLANGTON_BUILD_TOOLS=OFF
+          -DVCPKG_APPLOCAL_DEPS=OFF
           -DVCPKG_TARGET_TRIPLET=x64-windows-static-md
           -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
 
