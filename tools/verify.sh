@@ -79,6 +79,30 @@ if [[ -f demo/tools/check_shaders.py ]]; then
 		fail "the demo's shaders have drifted from source/Shaders.cpp"
 	fi
 	rm -f "$log"
+elif [[ -d demo ]]; then
+	fail "demo/ exists but demo/tools/check_shaders.py does not"
+else
+	echo "   skipped: no demo/"
+fi
+
+#---------------------------------------------------------------------------
+step "Browser demo's port of the walk"
+#---------------------------------------------------------------------------
+# demo/plugin.js walks in JavaScript what Ant.cpp walks in C++. A port that
+# drifts still walks a plausible ant, so the plugin's own Ant.cpp, Controls.cpp
+# and Clock.h and the port in plugin.js are run through the same scenario and
+# must print the same thing, bit for bit (demo/tools/crosscheck/).
+if [[ -f demo/tools/crosscheck/crosscheck.sh ]]; then
+	if ! command -v node >/dev/null 2>&1; then
+		echo "   skipped: no node on this machine"
+	elif out=$( bash demo/tools/crosscheck/crosscheck.sh 2>&1 ); then
+		printf '%s\n' "$out" | sed 's/^/   /'
+	else
+		printf '%s\n' "$out" | tail -14
+		fail "the demo's port of the walk has drifted from source/Ant.cpp"
+	fi
+elif [[ -d demo ]]; then
+	fail "demo/ exists but demo/tools/crosscheck/crosscheck.sh does not"
 else
 	echo "   skipped: no demo/"
 fi

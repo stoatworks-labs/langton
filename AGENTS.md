@@ -204,6 +204,109 @@ back by two (`--reverse`), the upload reading rows downwards (`--highway`), and
 the clock banking the rounds it ran (`--clock-law`). The harness has no copy of
 the shaders or the walk: it drives the plugin's.
 
+## The browser demo (2026-10-20)
+
+`demo/` is <https://langton-demo.stoatworks-labs.com>, built to the fleet's
+`resolume-demo` kit rules (`~/Projects/resolume/specs/DEMO-BRIEF.md`) by a
+sub-agent of the release session, from conway's demo. What a reader of it must
+know:
+
+- **The shaders are the plugin's**, all four pieces plus kVersion, spliced by
+  `demo/tools/check_shaders.py --write` into `demo/shaders.js` and compared
+  character for character by the same script, which `tools/verify.sh` runs. It
+  also fails when Shaders.cpp defines a piece it does not list, and when the
+  JOIN changes on either side (`Assemble()`, InitGL's two stages, plugin.js's
+  copy of them). Negative-controlled once each: the trail's `-float` -> `float`
+  in the copy, a `kExtraFragment` added to Shaders.cpp, and plugin.js
+  assembling without kCommon all fail it. **Both passes compile in WebGL2 as
+  spliced**: RG32UI and R32UI are colour-renderable in WebGL2, so the kit's
+  PassBuffer (`filter: 'nearest'`) holds the state and the Over's sample target;
+  `Palette[12]` goes up with `uniform3fv`, `Ants[8]` with `uniform2iv` on
+  `Ants[0]`, every int and uint through `setInt`/`setUint`, both samplers set.
+- **The walk is a port, held to the C++ by a check that runs every verify.**
+  The block between plugin.js's `BEGIN PORT` / `END PORT` markers (Ant.cpp's
+  `ant::World`, Hash.h, Clock.h, Controls.cpp's conversions, and seedSalt's
+  expression from Langton.cpp) is sliced out as text by
+  `demo/tools/crosscheck/run.mjs` and run under node; `printer.cpp`, compiled on
+  the plugin's own Ant.cpp and Controls.cpp, runs the same scenario: all 7
+  rules x 1, 2, 3, 4, 5, 8 ants x 157x93, 16x9 and 213x120 x empty / 20% / 90%
+  soups, 3000 rounds out and 3000 back in chunks; Langton's ant 12,000 steps
+  into its highway on 512x512 and back; six ants started on the edges facing
+  off them, every rule; a rule changed mid-walk three times and a bad one
+  refused; re-grids (16:9 -> 4:3 -> 16:9, smaller, larger, a no-op, 1x1); Load
+  with short and long vectors; every slider position's Speed, Rows, Trail,
+  Gap, Density and threshold; the inverse conversions; GridFor; OptionIndex;
+  std::lround; PCG; CellHash; the salt; the step clock over 56 rate/jitter
+  cases of 3000 frames; and where the ants start for ~400 grid shapes up to
+  1920x1080 (Math.cos/sin against libm).
+  Floats print as their bits. **10,861 lines, identical.** `crosscheck.sh`
+  diffs them; nine one-character mutants of the port (the undo turned the wrong
+  way, the torus a cell short, the re-grid floored, the soup's colour mod n,
+  lround as Math.round, the clock's cap, the start radius rounded, a visit time
+  off by one, reversed rounds in forward ant order) are all caught.
+- **One bit-level difference, and it is the compiler's.** Apple clang's
+  default `-ffp-contract=on` fuses `owed += stepsPerSecond * dt` (Clock.h) into
+  one `fmadd` on arm64, so the plugin's Apple Silicon slice carries the clock's
+  fraction with one rounding fewer than JavaScript (or the x86_64 slice, which
+  has no FMA in its baseline). The printer is therefore built twice:
+  `-ffp-contract=off` must match every line, and the native build must match
+  with the carried fraction masked (288 clock lines differ in their last bits;
+  no frame's count of rounds, total or digest differs). If this ever matters,
+  it is a difference between the plugin's own two slices first.
+- **The frame logic was compared with the plugin ONCE**, and agreed. It is the
+  rest of the port (Langton.cpp's ProcessOpenGL: the time and jump rule, the
+  buttons, Seed before Reseed, Pattern reseeding, the re-grid, the Rule and
+  Ants changes, Reverse, the dirty-row upload, the composite's palette and ants;
+  `seed()` with the Over's sample pass and read-back). A scratch script drove
+  the page headlessly with requestAnimationFrame replaced by a pump (page frame
+  k on a clock of (k-1)/60 s) and read the canvas back straight after each
+  checkpoint's draw, against `lntest --pipe` on its i/60 clock with a cue sheet
+  making the same changes on the same frames. The source, 1280x720, 700 frames:
+  RLLR soup (Seed 7) with 3 ants, Spectrum, Reverse 200-300, Rule -> LLRR at
+  350, Ants -> 5 at 400, Speed 0 with Step presses at 460 and 470 and one
+  reversed at 467, Reseed at 500, Seed 9 at 520, Cell Size 120 -> 86 rows at
+  600, Heat and Show Ants off at 650: all 17 checkpoints within 1 level of 255
+  (0 pixels over 3; the same frame read one frame late differs in 2,589 pixels,
+  upside down in 435,924). The Over, 640x360, 240 frames, LLRR (four levels) on
+  the page's own geometry card fed to `lntest --over --pipe` frame by frame
+  (read from the page at Mix 0, which returns the clip exactly), Reseed at 120:
+  all 8 checkpoints within 1 level, alpha included. **Nothing repeats that
+  comparison**; a change to Langton.cpp needs plugin.js changed by hand.
+- **Decided without asking**: both plugins on one page (conway's shape: Plugin
+  dropdown = a new instance at that constructor's defaults, `?plugin=over`,
+  Pattern as two rows of the same name); Audio, Audio Burst and Audio Reverse
+  absent (no FFT in a browser; with no spectrum the analyser never fires, so
+  nothing the page draws changes); Step and Reseed are toggles the page releases
+  after a frame; Ants is a dropdown of 1-8 whose SLOT is stored (a URL's
+  `?ants=2` is three ants -- the host's integer is the slot plus one); Seed a
+  0-99 dropdown; the Over's clips `grid` (default: bright shapes on black for
+  the two-colour default rule), `ramp`, `scene`, `spot`, `bars`, `alpha`; the
+  sample target read back as RED_INTEGER where the implementation offers it,
+  else RGBA_INTEGER (WebGL2's guarantee) taking the red channel; the harness's
+  test hooks (wrap skew, unturn sign, point sample, mirror, float clock, clear
+  on resize, dropped row) not ported, their uniforms sent as 0.
+- **Differences, all said on the page**: the walk is a port (and how it is
+  checked); no audio; events as toggles, integers as dropdowns, no About block;
+  the clock is the page's seconds (no unit vote; Restart is a jump and the walk
+  carries on); the walk runs on the page's main thread (at most 100,000 rounds a
+  frame, as the plugin); the Over's clip is the kit's premultiplied one, read
+  once per seed; the arm64 FMA above.
+- **Verified headlessly** (cdpshot's Chrome, `--use-angle=metal`, console and
+  Log events collected, `getUniformLocation` and `getError` instrumented): no
+  console errors, no missing uniforms of the plugin's, no GL errors, both
+  variants render; the highway leaves the blob down and to the left as in
+  `docs/hero.png`; Palette Phosphor -> Heat while paused changes about 51,500 of
+  550,440 pixels; Step while paused is exactly one round; Reverse runs the
+  highway back into the blob and on past the seed (a past that never happened).
+- **Live** needs a proxied AAAA 100:: DNS record for `langton-demo` (the zone's
+  custom domains are full; `wrangler.toml` has a ROUTE), and `deploy.yml` needs
+  the repo's `CLOUDFLARE_API_TOKEN` secret and `CLOUDFLARE_ACCOUNT_ID` variable.
+  The live page will log one console error that is not the page's: the zone
+  injects an inline `/cdn-cgi/challenge-platform` script that the page's
+  `script-src 'self'` CSP blocks, as on every `*-demo` host.
+- `stoatworks-backend/resolume-demo/sync.sh` does not list langton yet: add it,
+  or the vendored kit here is one nothing checks.
+
 ## Shape of the code
 
     source/Ant.{h,cpp}        the walk: rules, ants, step, inverse, soup, re-grid
@@ -215,6 +318,8 @@ the shaders or the walk: it drives the plugin's.
     source/Audio.*, GLState.h, Hash.h, Diag.*   the fleet's
     tools/lntest/main.cpp     the harness
     tools/{verify,mutate,glslc}.sh, tools/sweep.py
+    demo/                     the browser demo: plugin.js (the port), shaders.js (generated),
+                              tools/ (check_shaders.py, crosscheck/), vendor/ (the kit)
 
 ## What is genuinely verified, and what is assumed
 
