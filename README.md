@@ -136,8 +136,10 @@ each.
 **On Windows, in Resolume Arena 7.27.1** (win-lab: a virtual machine, Mesa llvmpipe, no GPU,
 no sound device), the x64 build loads, registers and renders: both plugins, every control as
 declared (22 and 26 with Arena's Opacity), Arena's log clean, all of the fleet's Arena checks
-that can run there passed (15 passed, 2 skipped: audio). The gate measures each control
-against a still picture: in the source all 12 it could measure changed the picture; in the
+that can run there passed (15 passed, 2 skipped: audio), twice: once on the registered tree
+from just before the Rule-change and Audio Reverse fixes, and again on this release's own
+`langton-windows-x86_64.zip`. The gate measures each control against a still picture, and both
+runs gave the same verdicts: in the source all 12 it could measure changed the picture; in the
 Over 15 did and Reverse was too close to call, as the ants never stand still. The three audio
 controls could not be tested without a sound device. The expectation is
 `plugin-bench/arena/expect/langton.json`. Software rendering says nothing about a GPU or about

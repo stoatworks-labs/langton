@@ -42,8 +42,9 @@ lately (the trail), and the red cell at the end of the highway is the ant.*
 > **On Windows it has been in Resolume.** In Arena 7.27.1 on win-lab (a virtual machine with
 > software rendering, no GPU and no sound device), both plugins load and register as `SW Langton`
 > and `SW Langton Over`, every control is as declared, both render, and Arena's log stays clean:
-> all of the fleet's Arena checks that can run there passed. Each control is measured against a
-> still picture, which a walking ant never quite is, so the verdicts are per run. In the source all
+> all of the fleet's Arena checks that can run there passed, twice, the second time on this
+> release's own Windows download. Each control is measured against a still picture, which a walking
+> ant never quite is, so the verdicts are per run; both runs gave the same ones. In the source all
 > 12 controls it could measure changed the picture; in the Over 15 did and Reverse was too close to
 > call. The three audio controls couldn't be tested without a sound device. Software rendering says
 > nothing about a GPU, or about speed.
