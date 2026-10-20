@@ -131,6 +131,22 @@ What is **not** verified, and is the honest limit of this build:
   below 10 fps the ants run slower than Speed rather than bursting.
 - The colours and palettes are chosen by eye.
 
+## Browser demo
+
+**<https://langton-demo.stoatworks-labs.com/>** — both plugins, their own controls and
+defaults. The sample and composite passes are the plugin's own GLSL, spliced unedited
+into `demo/shaders.js` (`demo/tools/check_shaders.py`, run by `tools/verify.sh`, fails on
+a changed character). The walk is the plugin's CPU half, so the page runs a JavaScript
+port of it — the rules, the step and its inverse, the torus, the soup, the re-grid, the
+hash, the step clock and the conversions — and `demo/tools/crosscheck/` holds that port
+to the plugin's own `Ant.cpp` and `Controls.cpp`, every cell and every ant over every
+rule, out and back (verify.sh runs it too). The frame logic around the walk is a port
+that was compared with the plugin once, frame for frame through `lntest`, and is
+otherwise **only a reader's to check**. There is no audio in a browser, so Audio, Audio
+Burst and Audio Reverse are absent; Step and Reseed are toggles the page releases; Ants
+and Seed are dropdowns (1–8, 0–99). The Over runs on the page's generated clips. It is a
+demo, not the plugin, and the page says what it does not reproduce.
+
 ## Build
 
 C++17 + GLSL 4.10, CMake, FFGL 2.1 (SDK vendored as a submodule). macOS builds are
