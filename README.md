@@ -12,7 +12,7 @@
 > square**. `--engine` holds the plugin's walk to the harness's own, cell for cell, for
 > every rule, and `--highway` reads the GPU's state texture back after every frame and
 > finds it is that walk. `--reverse` runs every rule out and back to its seed **exactly**.
-> `lntest --negative` re-runs twelve checks against deliberately wrong models, and
+> `lntest --negative` re-runs fourteen checks against deliberately wrong models, and
 > `tools/mutate.sh` changes one character of the shipped shaders and code; every one is
 > caught. A control sweep fails if any parameter does nothing.
 
@@ -98,12 +98,12 @@ Apple's software renderer:
 | Reverse | every rule, a soup and four ants: 3000 rounds out by the clock, 1500 back by the clock and the rest by hand, and every cell and ant is back at the seed; out again, and it is where it was; Langton's ant 12,000 steps into the highway and back to an empty grid |
 | clock | from a host clock at 499,000,000 ms (a float resolves 32 ms there) every frame's dt is within 6×10⁻¹¹ s, and the step count is floor( Speed × elapsed ) at every checkpoint; the clock law holds over 36,000 frames at 60, 23.976 and jittered rates |
 | coverage | each pixel is the painted area it covers: worst 3×10⁻⁵ at 8-px cells with a gap, 1.9×10⁻⁴ at 7.42-px cells, 0 at half-pixel cells, each inside its bound from float edges |
-| the look | every cell its palette colour plus the trail's glow at exp( −steps since / Trail ), and each ant its colour, to 7.5×10⁻⁶ |
+| the look | every cell its palette colour plus the trail's glow at exp( −steps since / Trail ), and each ant its colour, to 7.5×10⁻⁶; after a switch from a twelve-colour rule to LLRR, every cell the colour the ants now read it as (its colour modulo 4) |
 | Over | the seed is the clip's brightness in the rule's levels, cell for cell (Langton's 2 levels and LLRR's 4, a saturated blue counted, 0 cells wrong), not mirrored; Mix 0 returns the clip bit for bit |
 | resize | a resize of the same shape keeps the walk bit-identical; 16:9 → 4:3 → 16:9 keeps the middle cell for cell and empties the margins |
-| audio | the first frame after a clip trigger, loud, fires nothing; the next beat does (Audio Burst: 25 rounds an onset, exactly) |
+| audio | the first frame after a clip trigger, loud, fires nothing; the next beat does (Audio Burst: 25 rounds an onset, exactly); with Audio Reverse an onset turns time round, and switching Audio Reverse off hands time back to Reverse |
 | GL state | viewport, vertex array, array buffer, program, unit, framebuffer, blend, scissor, clear colour, colour mask, ten texture units, both plugins |
-| negative controls | **12** deliberately wrong models, **all 12** detected |
+| negative controls | **14** deliberately wrong models, **all 14** detected |
 | mutants | **7** one-character changes (three GLSL, four C++), **all 7** caught |
 | dead controls | **35** parameters over both plugins, all live |
 

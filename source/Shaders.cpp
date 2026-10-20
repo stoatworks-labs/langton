@@ -55,9 +55,12 @@ void main()
 // Composite. Each output pixel is the cell grid BOX-FILTERED over its
 // footprint, every cell it overlaps weighted by the exact area of overlap
 // with the cell's lit square (the cell inset by Gap / 2 each side): conway's
-// composite. A cell's colour is premultiplied: colour 0 is nothing (the source
-// is transparent there), colour k the palette's k; a cell an ant stood on
-// glows in TrailColour at exp( -age / Trail ), age in ant steps on the
+// composite. A cell's colour is read modulo the rule's Colours, as the walk
+// reads it: a cell painted under a longer rule draws as the colour the ants
+// now take it for, never as a palette slot the rule has no colour in.
+// Premultiplied: colour 0 is nothing (the source is transparent there),
+// colour k the palette's k; a cell an ant stood on glows in TrailColour at
+// exp( -age / Trail ), age in ant steps on the
 // activity clock (uint subtraction, so it survives the clock wrapping); an
 // ant's own cell is AntColour, whole.
 //===========================================================================
@@ -71,6 +74,7 @@ uniform float Gap;
 uniform uint Now;
 uniform float Trail;
 uniform vec3 Palette[ 12 ];
+uniform int Colours;
 uniform vec3 TrailColour;
 uniform vec3 AntColour;
 uniform ivec2 Ants[ 8 ];
@@ -90,7 +94,7 @@ vec4 cellAt( ivec2 c )
 		if( Ants[ i ] == c )
 			return vec4( AntColour, 1.0 );
 	uvec2 s     = texelFetch( State, c, 0 ).rg;
-	uint colour = s.r & COLOUR_MASK;
+	uint colour = ( s.r & COLOUR_MASK ) % uint( Colours );
 	vec4 v      = colour == 0u ? vec4( 0.0 ) : vec4( Palette[ min( colour, 11u ) ], 1.0 );
 	if( Trail > 0.0 && ( s.r & VISITED_BIT ) != 0u )
 	{

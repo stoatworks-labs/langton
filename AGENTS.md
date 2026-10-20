@@ -31,7 +31,9 @@ and finds the same walk there.
    audio analyser. `StepClock` owes Speed × dt rounds and carries the fraction,
    so the count is floor( Speed × elapsed ) at any frame rate.
 2. **Audio**: the primed onset analyser; an onset adds Audio Burst rounds and,
-   with Audio Reverse, flips the direction of time.
+   with Audio Reverse, flips the direction of time. Audio Reverse off forgets
+   the flips, so time follows Reverse again (it used to latch: found while
+   writing the guide, 2026-10-20; `--prime` checks it).
 3. **Buttons**: Step adds a round on its rising edge. Seed is read BEFORE
    Reseed (conway's sweep found the other order swallows a press); a Seed or
    Pattern change reseeds.
@@ -168,7 +170,7 @@ glslc: a macOS runner has no accelerated GL.
 ## A check that cannot fail is not a check
 
 `lntest --negative` sets one wrong MODEL at a time and requires the check to
-fail. All 12 are detected:
+fail. All 14 are detected:
 
 | check | the wrong model |
 | --- | --- |
@@ -180,8 +182,10 @@ fail. All 12 are detected:
 | `--clock` | elapsed time from the host clock in float |
 | `--coverage` | point-sample the cell under each pixel's centre |
 | `--look` | the harness expects the trail to fade by rounds, not ant steps |
+| `--look` | the harness expects a cell painted under a longer rule drawn as its own colour, not modulo the rule |
 | `--over-check` | the clip laid under the grid mirrored |
 | `--prime` | the analyser unprimed |
+| `--prime` | the harness expects an onset's turn to outlast Audio Reverse switched off |
 | `--resize` | the walk cleared on a resize |
 | `--cues` | every control ramps between keys |
 

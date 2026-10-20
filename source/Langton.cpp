@@ -522,7 +522,12 @@ FFResult LangtonPlugin::ProcessOpenGL( ProcessOpenGLStruct* pgl )
 	const long long rounds = std::min( owed + pendingRounds, kMaxRoundsPerFrame ) + testRounds;
 	pendingRounds          = 0;
 	testRounds             = 0;
-	reversedNow            = ( params[ PT_REVERSE ] > 0.5f ) != audioReversed;
+	//Audio Reverse off hands time back to Reverse: the onsets' turns are
+	//forgotten, or switching it off after an odd number of them would leave
+	//the ants walking backwards with Reverse unticked.
+	if( params[ PT_AUDIO_REVERSE ] <= 0.5f )
+		audioReversed = false;
+	reversedNow = ( params[ PT_REVERSE ] > 0.5f ) != audioReversed;
 	world.Step( rounds, reversedNow );
 
 	upload();
@@ -577,6 +582,7 @@ void LangtonPlugin::composite( const FFGLTextureStruct* input, const GLint* host
 	setUint( compositeShader, "Now", static_cast< uint32_t >( world.Clock() ) );
 	compositeShader.Set( "Trail", static_cast< float >( TrailFromParam( params[ PT_TRAIL ] ) ) );
 	glUniform3fv( glGetUniformLocation( compositeShader.GetGLID(), "Palette" ), ant::kMaxColours, colours );
+	compositeShader.Set( "Colours", n );
 	compositeShader.Set( "TrailColour", look.trail[ 0 ], look.trail[ 1 ], look.trail[ 2 ] );
 	compositeShader.Set( "AntColour", look.ant[ 0 ], look.ant[ 1 ], look.ant[ 2 ] );
 	glUniform2iv( glGetUniformLocation( compositeShader.GetGLID(), "Ants" ), ant::kMaxAnts, antPlaces );

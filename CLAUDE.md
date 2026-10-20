@@ -51,7 +51,7 @@ layout, the upload, the composite or the parameter tables.
   `--prime`, `--resize`, `--state`; no GL: `--clock-law`, `--cues`, `--names`.
 - One raster only: add `--size WxH`. The software renderer:
   `LNTEST_RENDERER=software ./build/lntest --highway --size 320x180`.
-- **The checks can fail**: `--negative` (12 wrong models), `tools/mutate.sh`
+- **The checks can fail**: `--negative` (14 wrong models), `tools/mutate.sh`
   (one character of GLSL, Ant.cpp, Langton.cpp and Clock.h).
 - What CI runs: `--offline` and `tools/glslc.sh`.
 - No dead controls: `python3 tools/sweep.py` (35 parameters over both plugins).
@@ -71,7 +71,10 @@ layout, the upload, the composite or the parameter tables.
   re-grid keeps the overlap, centred, with offsets TRUNCATED toward zero (not
   floored), so 16:9 → 4:3 → 16:9 puts every cell back. Ants keep their place
   relative to the middle and wrap.
-- **A Rule change keeps the field** (colours read modulo the new length); an Ants
+- **A Rule change keeps the field** (colours read modulo the new length, by the
+  walk AND the composite: a cell left over from a longer rule draws as the colour
+  the ants take it for; before 2026-10-20 it drew as an empty palette slot,
+  opaque black, and `--look` now checks it); an Ants
   change puts the ants back at their start places on the same field; a Seed
   change or a Pattern change reseeds; Density acts from the next reseed.
 - **Probabilities are integer thresholds** (`ThresholdU32`): a PCG hash below

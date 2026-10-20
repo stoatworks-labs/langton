@@ -957,8 +957,10 @@ struct Perturb
 	bool clockFloat       = false;///< --clock: elapsed time from a float host clock
 	bool pointSample      = false;///< --coverage: the cell under the pixel's centre
 	bool lookPerRound     = false;///< --look: the harness times the trail in rounds, not steps
+	bool lookRawColour    = false;///< --look: a leftover colour expected as itself, not modulo the rule
 	bool overMirrored     = false;///< --over-check: the clip laid under the grid mirrored
 	bool primeOff         = false;///< --prime: the analyser unprimed
+	bool audioTurnKept    = false;///< --prime: expect an onset's turn to outlast Audio Reverse
 	bool resizeClears     = false;///< --resize: the walk cleared on a resize
 	bool cuesRamp         = false;///< --cues: every control ramps between keys
 };
@@ -1619,6 +1621,62 @@ int runLook( const Perturb& perturb )
 		            "(bound 2e-5); %d cells glowing above 1%%, %d ants drawn",
 		            c.trail, c.ants ? "on" : "off", worst, glowing, antCells ) );
 	}
+
+	//A field painted under a twelve-colour rule, then the Rule set to LLRR:
+	//every cell is drawn as the colour the walk now reads it as, its colour
+	//modulo four (a multiple of four is colour 0, and transparent), never as
+	//a palette slot LLRR has no colour in.
+	{
+		Rig rig;
+		if( !rig.Init( w, h ) )
+			return 1;
+		manual( rig );
+		rig.plugin.SetGridForTest( cols, rows );
+		rig.Set( PT_RULE, 4.0f );//LLRRRLRLRLLR
+		rig.Set( PT_ANTS, 3.0f );
+		rig.Set( PT_PATTERN, static_cast< float >( Pattern::Soup ) );
+		rig.Set( PT_DENSITY, 0.6f );
+		rig.Set( PT_PALETTE, static_cast< float >( Palette::Phosphor ) );
+		rig.Set( PT_GAP, 0.0f );
+		rig.Set( PT_TRAIL, ParamFromTrail( 0.0 ) );
+		rig.Set( PT_SHOW_ANTS, 0.0f );
+		rig.Render( 1 );
+		rig.Rounds( 3000 );
+		rig.Set( PT_RULE, 1.0f );//LLRR
+		rig.Render( 1 );
+		const Cells texture = rig.Texture();
+		const Floats out    = rig.Output();
+		const int n         = 4;
+		double worst        = 0.0;
+		int leftover = 0, cleared = 0;
+		for( int cy = 0; cy < rows; ++cy )
+			for( int cx = 0; cx < cols; ++cx )
+			{
+				const size_t i     = static_cast< size_t >( cy ) * cols + cx;
+				const int raw      = static_cast< int >( texture[ i * 2 ] & 0xFFu );
+				const int colour   = perturb.lookRawColour ? raw : raw % n;
+				double expect[ 4 ] = { 0, 0, 0, 0 };
+				leftover += raw >= n;
+				cleared += raw >= n && raw % n == 0;
+				if( colour != 0 )
+				{
+					const double t = static_cast< double >( colour - 1 ) / ( n - 2 );
+					for( int k = 0; k < 3; ++k )
+						expect[ k ] = kPhosphor.first[ k ] + ( kPhosphor.last[ k ] - kPhosphor.first[ k ] ) * t;
+					expect[ 3 ] = 1.0;
+				}
+				const int px = cx * 10 + 5, py = cy * 10 + 5;
+				for( int k = 0; k < 4; ++k )
+				{
+					const double got = out[ ( static_cast< size_t >( py ) * w + px ) * 4 + k ];
+					worst            = std::max( worst, std::fabs( got - std::min( std::max( expect[ k ], 0.0 ), 1.0 ) ) );
+				}
+			}
+		Check( worst <= 2e-5 && leftover > 20 && cleared > 2,
+		       fmt( "LLRRRLRLRLLR for 3000 rounds of a soup, then LLRR: every cell within %.1e of its colour modulo 4 "
+		            "(bound 2e-5); %d cells painted beyond LLRR's four colours, %d of them a multiple of four and clear",
+		            worst, leftover, cleared ) );
+	}
 	return Verdict();
 }
 
@@ -1749,6 +1807,36 @@ int runPrime( const Perturb& perturb )
 			            effect ? "Over  " : "source", raster.w, raster.h, before, roundsBefore, burst, atTrigger - before,
 			            after - atTrigger ) );
 		}
+
+	//Audio Reverse: one onset turns time round, and switching Audio Reverse
+	//off hands it back to Reverse, whatever the onsets left it at.
+	{
+		Rig rig;
+		if( !rig.Init( 320, 180 ) )
+			return 1;
+		manual( rig );
+		rig.plugin.SetGridForTest( 64, 36 );
+		rig.Set( PT_AUDIO_REVERSE, 1.0f );
+		rig.feed = AudioFeed::Pulses;
+		int frames = 0;
+		while( rig.plugin.Onsets() < 1 && frames < 120 )
+		{
+			rig.Render( 1 );
+			++frames;
+		}
+		const bool turned = rig.plugin.TimeReversed();
+		rig.Set( PT_AUDIO_REVERSE, 0.0f );
+		rig.Render( 1 );
+		const bool handedBack = !rig.plugin.TimeReversed();
+		rig.Set( PT_REVERSE, 1.0f );
+		rig.Render( 1 );
+		const bool reverseRules = rig.plugin.TimeReversed();
+		const bool expectBack   = !perturb.audioTurnKept;
+		Check( rig.plugin.Onsets() == 1 && turned && handedBack == expectBack && reverseRules == expectBack,
+		       fmt( "Audio Reverse on, %llu onset in %d frames: time %s; Audio Reverse off: time %s; Reverse on: time %s",
+		            rig.plugin.Onsets(), frames, turned ? "backwards" : "forwards", handedBack ? "forwards" : "backwards",
+		            reverseRules ? "backwards" : "forwards" ) );
+	}
 	return Verdict();
 }
 
@@ -2024,8 +2112,10 @@ int runNegative( bool offlineOnly = false )
 	add( "clock", runClock, "take elapsed time from the host clock in float", []( Perturb& p ) { p.clockFloat = true; } );
 	add( "coverage", runCoverage, "point-sample the cell under each pixel's centre", []( Perturb& p ) { p.pointSample = true; } );
 	add( "look", runLook, "expect the trail to fade by rounds, not ant steps", []( Perturb& p ) { p.lookPerRound = true; } );
+	add( "look", runLook, "expect a cell painted under a longer rule drawn as its own colour", []( Perturb& p ) { p.lookRawColour = true; } );
 	add( "over", runOver, "lay the clip under the grid mirrored", []( Perturb& p ) { p.overMirrored = true; } );
 	add( "prime", runPrime, "run the analyser unprimed", []( Perturb& p ) { p.primeOff = true; } );
+	add( "prime", runPrime, "expect an onset's turn to outlast Audio Reverse switched off", []( Perturb& p ) { p.audioTurnKept = true; } );
 	add( "resize", runResize, "clear the walk on a resize", []( Perturb& p ) { p.resizeClears = true; } );
 	add( "cues", runCues, "ramp every control between keys", []( Perturb& p ) { p.cuesRamp = true; } );
 
