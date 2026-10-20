@@ -53,6 +53,7 @@ uniform float Gap;
 uniform uint Now;
 uniform float Trail;
 uniform vec3 Palette[ 12 ];
+uniform int Colours;
 uniform vec3 TrailColour;
 uniform vec3 AntColour;
 uniform ivec2 Ants[ 8 ];
@@ -72,7 +73,7 @@ vec4 cellAt( ivec2 c )
 		if( Ants[ i ] == c )
 			return vec4( AntColour, 1.0 );
 	uvec2 s     = texelFetch( State, c, 0 ).rg;
-	uint colour = s.r & COLOUR_MASK;
+	uint colour = ( s.r & COLOUR_MASK ) % uint( Colours );
 	vec4 v      = colour == 0u ? vec4( 0.0 ) : vec4( Palette[ min( colour, 11u ) ], 1.0 );
 	if( Trail > 0.0 && ( s.r & VISITED_BIT ) != 0u )
 	{

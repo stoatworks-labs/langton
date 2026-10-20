@@ -685,6 +685,7 @@ function createRenderer(gl, quad) {
     p.setUint('Now', st.world.clock);
     p.set('Trail', TrailFromParam(host.trail));
     p.setArray('Palette', colours, 3);
+    p.setInt('Colours', n);
     p.set('TrailColour', ...look.trail);
     p.set('AntColour', ...look.ant);
     const antsLoc = p.location('Ants[0]');
