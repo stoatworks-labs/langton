@@ -2,8 +2,9 @@
 
 > **AI-assisted project.** This codebase was created with [Claude](https://claude.com/claude-code)
 > (Anthropic), directed and reviewed by a human author. It has **never been loaded into
-> Resolume**; it is loaded by [oxbow](https://github.com/stoatworks-labs/oxbow), a real FFGL
-> host that is not Resolume. Everything below is measured by an offline harness that drives
+> Resolume on macOS**; there it is loaded by [oxbow](https://github.com/stoatworks-labs/oxbow),
+> a real FFGL host that is not Resolume. On Windows it loads and renders in Resolume Arena 7.27.1
+> under software rendering (see Status). Everything below is measured by an offline harness that drives
 > the real plugin classes in a headless GL context, on this Mac's GPU at two rasters and
 > again on Apple's software renderer. `lntest --literature` finds Langton's ant on an empty
 > grid **settling into its highway at step 9977** and repeating a 104-step cycle that moves
@@ -28,6 +29,9 @@ chaos, then the highway. Pale cells are the ant's colour 1; the darker cells are
 has walked recently (the trail); the red cell is the ant. Rendered by the plugin's
 offline harness (`lntest`), not captured from Resolume.</sub>
 
+<!-- downloads:start -->
+<!-- downloads:end -->
+
 ## The one idea
 
 **An ant on a grid of black and white cells. On a white cell it turns right, on a black
@@ -41,7 +45,8 @@ the walk is the rule, run exactly, one step at a time, and what you see falls ou
   steps over and over, each cycle carrying it two cells diagonally, for ever.
 - Give the colours more letters and you get **Turk and Propp's ants**: a rule like LLRR
   says turn left on colour 0, left on 1, right on 2, right on 3, then step the colour on.
-  Rules made of pairs of equal letters (LLRR, RLLR) **grow symmetrically**; LRRRRRLLR
+  Rules whose letters pair off into equal pairs, read round in a circle (LLRR, and
+  RLLR, whose last R pairs with its first), **grow symmetrically**; LRRRRRLLR
   **fills a square**; others make convoluted highways or stay chaotic.
 - **The walk runs backwards exactly.** Each step can be undone (step back, colour back,
   turn back), so with Reverse on, ten thousand steps of chaos un-happen into the empty
@@ -55,7 +60,8 @@ behind.
 ![The Over effect on the harness's test card: four ants have walked a night-street card, their paths drawn as pale cells and highways crossing the picture](docs/over.png)
 
 <sub>SW Langton Over on the harness's test card (a lit skyline, a ring, a saturated blue
-sign) after five seconds: four ants at 3000 steps a second. Rendered by `lntest`.</sub>
+sign) after five seconds: four ants at 3000 rounds a second (12,000 steps). Rendered by
+`lntest`.</sub>
 
 ![LRRRRRLLR after 40,000 steps: a square of pale cells with a chaotic core and a short highway inside it](docs/square.png)
 
@@ -66,7 +72,8 @@ sign) after five seconds: four ants at 3000 steps a second. Rendered by `lntest`
 - **Ants:** Rule (*Langton (RL)*, *LLRR*, *RLLR*, *LRRRRRLLR*, *LLRRRLRLRLLR*,
   *RRLLLRLLLRRR*, *RLR*: Wikipedia's examples of many-coloured ants), Ants (1–8; more ants
   take turns, the first in the middle facing up, the rest round it).
-- **Time:** Speed (0 pauses; 1 to a million steps a second, each ant one step a round),
+- **Time:** Speed (0 pauses; 1 to a million rounds a second, a round being one step for
+  each ant),
   Reverse (time runs backwards), Step (one round, by hand).
 - **Seeding:** Pattern (*Empty*, *Soup*; the Over adds *Clip*), Density, Seed, Reseed.
 - **Audio:** Audio (Resolume's FFT buffer), Audio Burst (rounds per onset, 10–100,000:
@@ -82,10 +89,26 @@ below it. Colour 0 is never drawn.
 
 ## Status
 
-**v0.1.0, unreleased, and honestly early.** Built and measured on macOS (Apple Silicon,
-M4 Max). It has **never been loaded into Resolume**: `oxbow probe` reads the bundles as a
-host does (`SW Langton` / `LA01` / source, `SW Langton Over` / `LA02` / effect) and
-`oxbow selftest` renders 120 frames through each. Never built on Windows. No OpenFX port.
+**v0.1.0, released 20 October 2026, and honestly early.** There is a
+[user guide](https://stoatworks-labs.com/software/langton/guide/)
+([PDF](docs/USER-GUIDE.pdf)), a [project page](https://stoatworks-labs.com/software/langton/)
+and a [browser demo](https://langton-demo.stoatworks-labs.com/) (below). No presets and no
+OpenFX port.
+
+Built and measured on macOS (Apple Silicon, M4 Max). It has **never been loaded into
+Resolume on macOS**: `oxbow probe` reads the bundles as a host does (`SW Langton` / `LA01` /
+source, `SW Langton Over` / `LA02` / effect) and `oxbow selftest` renders 120 frames through
+each.
+
+**On Windows, in Resolume Arena 7.27.1** (win-lab: a virtual machine, Mesa llvmpipe, no GPU,
+no sound device), the x64 build loads, registers and renders: both plugins, every control as
+declared (22 and 26 with Arena's Opacity), Arena's log clean, all of the fleet's Arena checks
+that can run there passed (15 passed, 2 skipped: audio). The gate measures each control
+against a still picture: in the source all 12 it could measure changed the picture; in the
+Over 15 did and Reverse was too close to call, as the ants never stand still. The three audio
+controls could not be tested without a sound device. The expectation is
+`plugin-bench/arena/expect/langton.json`. Software rendering says nothing about a GPU or about
+speed.
 
 What is measured, on this machine, at 1280x720 and 320x180 on the GPU and at 320x180 on
 Apple's software renderer:
@@ -115,8 +138,8 @@ frame), on this machine.
 
 What is **not** verified, and is the honest limit of this build:
 
-- **Never in Resolume**, on either platform: the clock unit, the FFT bins and real audio
-  are untested in a host.
+- **Never in Resolume on macOS**, and on Windows only under software rendering with no
+  sound device: the FFT bins and real audio are untested in a host.
 - **The grid is a torus.** Langton's highway runs off one edge and comes back on the
   other, and when it reaches its own chaos it starts new chaos. On the default 120-row
   grid that happens within a minute.
@@ -127,7 +150,7 @@ What is **not** verified, and is the honest limit of this build:
 - **The Over reads the clip once**, when the field is seeded (and again on Reseed or a
   Pattern change): after that the ants repaint it, and the clip shows through only as
   Backdrop and Clip Colour.
-- **The walk is on the CPU**, at most 100,000 rounds a frame: at a million steps a second
+- **The walk is on the CPU**, at most 100,000 rounds a frame: at a million rounds a second
   below 10 fps the ants run slower than Speed rather than bursting.
 - The colours and palettes are chosen by eye.
 
